@@ -12,9 +12,8 @@ const data = reactive({
   inner_height: 0,
 });
 
-const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
 const getDays = (year: number, month: string, block_number: number) => {
-  // const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
+  const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
   let days = [];
   let date = moment(`${year}-${month}-016`);
   let num = date.daysInMonth();
@@ -165,36 +164,11 @@ onMounted(() => {
         </div>
 
         <!-- 出勤簿テスト -->
-        <table class="flex">
-          <div
-            v-for="(record, index) in attendanceRecords"
-            v-bind:key="index"
-            class="flex flex-col items-center w-10 border-r"
-          >
+        <table class="flex justify-center">
+          <div v-for="(record, index) in attendanceRecords" v-bind:key="index">
             <thead>
               <tr>
-                <th class="flex flex-col justify-center h-12">
-                  <span
-                    class="font-bold text-xs"
-                    v-bind:class="
-                      dayOfWeek[moment(record.workDate).day()] === '土' ||
-                      dayOfWeek[moment(record.workDate).day()] === '日'
-                        ? 'text-red-800 '
-                        : ''
-                    "
-                    >{{ moment(record.workDate).date() }}</span
-                  >
-                  <span
-                    class="font-bold text-xs"
-                    v-bind:class="
-                      dayOfWeek[moment(record.workDate).day()] === '土' ||
-                      dayOfWeek[moment(record.workDate).day()] === '日'
-                        ? 'text-red-800 '
-                        : ''
-                    "
-                    >{{ dayOfWeek[moment(record.workDate).day()] }}</span
-                  >
-                </th>
+                <th class="font-bold text-xs">{{ record.workDate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -236,6 +210,13 @@ onMounted(() => {
           </div>
         </table>
         <!-- 出勤簿テストここまで -->
+
+        <!-- 出勤簿  -->
+        <div id="gantt-day" class="relative h-12">
+          <div id="gantt-calendar">
+            <div id="gantt-day" class="relative h-12"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
