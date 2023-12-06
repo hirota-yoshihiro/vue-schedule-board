@@ -5,16 +5,75 @@ import moment from "moment";
 const data = reactive({
   start_month: "2024-2",
   end_month: "2024-2",
-  block_size: 30,
-  block_number: 0,
-  calendars: [],
+  calendars: {},
   inner_width: 0,
   inner_height: 0,
 });
 
+const attendanceTypes = reactive([
+  {
+    overTime: "残業",
+    lateNightOverTime: "深夜",
+    holidayWorkTime: "休出",
+    annualVacation: "年休",
+    absenteeism: "欠勤",
+    publicHolidayTime: "公休",
+  },
+]);
+
+//  APIから取得した仮の勤怠入力データを想定。
+const attendanceRecords = reactive([
+  {
+    workDate: "2024-2-16",
+    overTime: 1.0,
+    lateNightOverTime: 0,
+    holidayWorkTime: 0,
+    anuualVacation: 0,
+    absenteeism: 0,
+    publicHolidayTime: 0,
+  },
+  {
+    workDate: "2024-2-17",
+    overTime: 1.0,
+    lateNightOverTime: 0,
+    holidayWorkTime: 0,
+    anuualVacation: 0,
+    absenteeism: 0,
+    publicHolidayTime: 0,
+  },
+  {
+    workDate: "2024-2-18",
+    overTime: 1.0,
+    lateNightOverTime: 0,
+    holidayWorkTime: 0,
+    anuualVacation: 0,
+    absenteeism: 0,
+    publicHolidayTime: 0,
+  },
+  {
+    workDate: "2024-2-19",
+    overTime: 1.0,
+    lateNightOverTime: 0,
+    holidayWorkTime: 0,
+    anuualVacation: 0,
+    absenteeism: 0,
+    publicHolidayTime: 0,
+  },
+  {
+    workDate: "2024-2-20",
+    overTime: 1.0,
+    lateNightOverTime: 2.0,
+    holidayWorkTime: 2.0,
+    anuualVacation: 0.0,
+    absenteeism: 0.0,
+    publicHolidayTime: 3.0,
+  },
+]);
+
+// APIから取得した勤怠入力仮のデータここまで
+
 const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
 const getDays = (year: number, month: string, block_number: number) => {
-  // const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
   let days = [];
   let date = moment(`${year}-${month}-016`);
   let num = date.daysInMonth();
@@ -39,19 +98,17 @@ const getCalendar = () => {
   for (let i = 0; i <= between_month; i++) {
     days = getDays(start_month.year(), start_month.format("MM"), block_number);
 
-    data.calendars.push({
+    data.calendars = {
       date: start_month.format("YYYY年MM月"),
-      year: start_month.year(),
-      month: start_month.month(), //month(), 0,1..11と表示
-      start_block_number: block_number,
-      calendar: days.length,
-      days: days,
-    });
+      days,
+    };
 
     start_month.add(1, "months");
     block_number = days[days.length - 1].block_number;
     block_number++;
   }
+
+  console.log(data.calendars.days);
   return block_number;
 };
 
@@ -60,61 +117,7 @@ const getWindowSize = () => {
   data.inner_height = window.innerHeight;
 };
 
-const attendanceRecords = reactive([
-  {
-    workDate: "2023-11-16",
-    overTime: "1.0",
-    lateNightOverTime: 0,
-    holidayWorkTime: 0,
-    anuualVacation: 0,
-    absenteeism: 0,
-    publicHolidayTime: 0,
-  },
-  {
-    workDate: "2023-11-17",
-    overTime: "1.0",
-    lateNightOverTime: 0,
-    holidayWorkTime: 0,
-    anuualVacation: 0,
-    absenteeism: 0,
-    publicHolidayTime: 0,
-  },
-  {
-    workDate: "2023-11-18",
-    overTime: "1.0",
-    lateNightOverTime: 0,
-    holidayWorkTime: 0,
-    anuualVacation: 0,
-    absenteeism: 0,
-    publicHolidayTime: 0,
-  },
-  {
-    workDate: "2023-11-19",
-    overTime: "1.0",
-    lateNightOverTime: 0,
-    holidayWorkTime: 0,
-    anuualVacation: 0,
-    absenteeism: 0,
-    publicHolidayTime: 0,
-  },
-  {
-    workDate: "2023-11-20",
-    overTime: "1.0",
-    lateNightOverTime: 0,
-    holidayWorkTime: 0,
-    anuualVacation: 0,
-    absenteeism: 0,
-    publicHolidayTime: 0,
-  },
-]);
-
-const fetchAttendanceRecodes = async () => {
-  setTimeout(() => {
-    console.log("0.3秒経ちました。");
-
-    console.log(attendanceRecords);
-  }, 0.3);
-};
+const fetchAttendanceRecodes = async () => {};
 
 onMounted(() => {
   getCalendar();
@@ -125,118 +128,181 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex w-full h-96">
-    <div id="gantt-content" class="flex">
-      <div
-        id="gantt-task"
-        class="flex items-center bg-green-600 text-white h-20"
-        ref="task"
-      >
-        <div
-          id="gantt-task-title"
-          class="flex items-center bg-green-600 text-white h-20"
-        >
+  <div class="flex h-56">
+    <div class="flex items-center h-20">
+      <div class="flex items-center h-full">
+        <!-- 出勤メモ -->
+        <div class="flex flex-col h-full border-r">
           <div
-            class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-48 h-full"
+            class="flex flex-col justify-center items-center h-full w-48 bg-green-600 font-bold text-sm text-white"
           >
-            メモ
-          </div>
-          <div
-            class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full"
-          >
-            種別
+            出勤時間に関するメモ
           </div>
         </div>
+        <!-- 出勤メモここまで -->
       </div>
     </div>
-    <div id="gantt-calendar" class="overflow-x-scroll w-full">
-      <div id="gantt-date" class="h-20">
-        <div id="gantt-year-month" class="relative h-8">
-          <div v-for="(calendar, index) in data.calendars" :key="index">
-            <div
-              class="bg-indigo-700 text-white border-b border-r border-t h-8 absolute font-bold text-sm flex items-center justify-center"
-              :style="`width:${calendar.calendar * data.block_size}px;left:${
-                calendar.start_block_number * data.block_size
-              }px`"
-            >
-              {{ calendar.date }}度
-            </div>
-          </div>
-        </div>
 
-        <!-- 出勤簿テスト -->
+    <!-- 種別 -->
+    <table class="flex border-r border-l">
+      <div
+        v-for="(type, index) in attendanceTypes"
+        v-bind:key="index"
+        class="flex flex-col items-center"
+      >
+        <thead>
+          <tr>
+            <th
+              class="flex flex-col justify-center h-20 w-12 bg-green-600 font-bold text-sm text-white"
+            >
+              <span>種別</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="w-full h-full">
+          <tr class="flex flex-col items-center h-36 w-full">
+            <td
+              class="flex justify-center items-center w-full font-bold text-sm h-6 border-b"
+            >
+              {{ type.overTime }}
+            </td>
+            <td
+              class="flex justify-center items-center w-full font-bold text-sm h-6 border-b"
+            >
+              {{ type.lateNightOverTime }}
+            </td>
+            <td
+              class="flex justify-center items-center w-full font-bold text-sm h-6 border-b"
+            >
+              {{ type.holidayWorkTime }}
+            </td>
+            <td
+              class="flex justify-center items-center w-full font-bold text-sm h-6 border-b"
+            >
+              {{ type.annualVacation }}
+            </td>
+            <td
+              class="flex justify-center items-center w-full font-bold text-sm h-6 border-b"
+            >
+              {{ type.absenteeism }}
+            </td>
+            <td
+              class="flex justify-center items-center w-full font-bold text-sm h-6 border-b"
+            >
+              {{ type.publicHolidayTime }}
+            </td>
+          </tr>
+        </tbody>
+      </div>
+    </table>
+    <!-- 種別ここまで -->
+
+    <!-- 出勤カレンダー -->
+    <div class="overflow-x-scroll border-t border-b border-r">
+      <div class="h-20">
         <table class="flex">
           <div
-            v-for="(record, index) in attendanceRecords"
+            v-for="(dayObj, index) in data.calendars.days"
             v-bind:key="index"
-            class="flex flex-col items-center w-10 border-r"
           >
-            <thead>
+            <thead class="border-r border-b">
               <tr>
-                <th class="flex flex-col justify-center h-12">
+                <th class="flex flex-col justify-center h-20 w-8">
                   <span
-                    class="font-bold text-xs"
+                    class="font-bold"
                     v-bind:class="
-                      dayOfWeek[moment(record.workDate).day()] === '土' ||
-                      dayOfWeek[moment(record.workDate).day()] === '日'
-                        ? 'text-red-800 '
+                      dayObj.dayOfWeek === '土' || dayObj.dayOfWeek === '日'
+                        ? 'text-red-800'
                         : ''
                     "
-                    >{{ moment(record.workDate).date() }}</span
+                    >{{ dayObj.day }}</span
                   >
                   <span
-                    class="font-bold text-xs"
+                    class="font-bold"
                     v-bind:class="
-                      dayOfWeek[moment(record.workDate).day()] === '土' ||
-                      dayOfWeek[moment(record.workDate).day()] === '日'
-                        ? 'text-red-800 '
+                      dayObj.dayOfWeek === '土' || dayObj.dayOfWeek === '日'
+                        ? 'text-red-800'
                         : ''
                     "
-                    >{{ dayOfWeek[moment(record.workDate).day()] }}</span
+                    >{{ dayObj.dayOfWeek }}</span
                   >
                 </th>
               </tr>
             </thead>
-            <tbody>
-              <tr class="flex flex-col items-center text-sm">
-                <td>
-                  {{ Number(record.overTime) > 0.0 ? record.overTime : "0.0" }}
-                </td>
-                <td>
-                  {{
-                    record.lateNightOverTime > 0.0
-                      ? record.lateNightOverTime
-                      : "0.0"
-                  }}
-                </td>
-                <td>
-                  {{
-                    record.holidayWorkTime > 0.0
-                      ? record.holidayWorkTime
-                      : "0.0"
-                  }}
-                </td>
-                <td>
-                  {{
-                    record.anuualVacation > 0.0 ? record.anuualVacation : "0.0"
-                  }}
-                </td>
-                <td>
-                  {{ record.absenteeism > 0.0 ? record.absenteeism : "0.0" }}
-                </td>
-                <td>
-                  {{
-                    record.publicHolidayTime > 0.0
-                      ? record.publicHolidayTime
-                      : "0.0"
-                  }}
-                </td>
-              </tr>
-            </tbody>
+            <div
+              v-for="(record, index) in attendanceRecords"
+              v-bind:key="index"
+              class="flex flex-col items-center border-r"
+            >
+              <tbody
+                v-if="dayObj.day == moment(record.workDate).date()"
+                class="w-full"
+              >
+                <tr class="flex flex-col items-center h-36 w-full">
+                  <td
+                    class="flex justify-center items-center w-full text-base h-6 border-b"
+                  >
+                    {{
+                      record.overTime > 0.0 ? record.overTime.toFixed(1) : "0.0"
+                    }}
+                  </td>
+                  <td
+                    class="flex justify-center items-center w-full text-base h-6 border-b"
+                  >
+                    {{
+                      record.lateNightOverTime > 0.0
+                        ? record.lateNightOverTime.toFixed(1)
+                        : ""
+                    }}
+                  </td>
+                  <td
+                    class="flex justify-center items-center w-full text-base h-6 border-b"
+                  >
+                    {{
+                      record.holidayWorkTime > 0.0
+                        ? record.holidayWorkTime.toFixed(1)
+                        : ""
+                    }}
+                  </td>
+                  <td
+                    class="flex justify-center items-center w-full text-base h-6 border-b"
+                  >
+                    {{
+                      record.anuualVacation > 0.0
+                        ? record.anuualVacation.toFixed(1)
+                        : ""
+                    }}
+                  </td>
+                  <td
+                    class="flex justify-center items-center w-full text-base h-6 border-b"
+                  >
+                    {{
+                      record.absenteeism > 0.0
+                        ? record.absenteeism.toFixed(1)
+                        : ""
+                    }}
+                  </td>
+                  <td
+                    class="flex justify-center items-center w-full text-base h-6"
+                  >
+                    {{
+                      record.publicHolidayTime > 0.0
+                        ? record.publicHolidayTime.toFixed(1)
+                        : ""
+                    }}
+                  </td>
+                </tr>
+              </tbody>
+            </div>
           </div>
         </table>
-        <!-- 出勤簿テストここまで -->
       </div>
     </div>
+
+    <!-- 出勤カレンダーここまで -->
+
+    <!-- 累計 -->
+
+    <!-- 累計ここまで -->
   </div>
 </template>
