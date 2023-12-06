@@ -21,6 +21,15 @@ const attendanceTypes = reactive([
   },
 ]);
 
+const cumulativeTotal = reactive({
+  overTime: 0.0,
+  lateNightOverTime: 0.0,
+  holidayWorkTime: 0.0,
+  annualVacation: 0.0,
+  absenteeism: 0.0,
+  publicHolidayTime: 0.0,
+});
+
 //  APIから取得した仮の勤怠入力データを想定。
 const attendanceRecords = reactive([
   {
@@ -99,8 +108,8 @@ const getCalendar = () => {
     days = getDays(start_month.year(), start_month.format("MM"), block_number);
 
     data.calendars = {
-      date: start_month.format("YYYY年MM月"),
       days,
+      date: start_month.format("YYYY年MM月"),
     };
 
     start_month.add(1, "months");
@@ -108,8 +117,17 @@ const getCalendar = () => {
     block_number++;
   }
 
-  console.log(data.calendars.days);
   return block_number;
+};
+
+const calcCumulativeTotal = () => {
+  for (let i = 0; i < attendanceRecords.length; i++) {
+    cumulativeTotal.overTime += attendanceRecords[i].overTime;
+    cumulativeTotal.lateNightOverTime += attendanceRecords[i].lateNightOverTime;
+    cumulativeTotal.holidayWorkTime += attendanceRecords[i].holidayWorkTime;
+    cumulativeTotal.absenteeism += attendanceRecords[i].absenteeism;
+    cumulativeTotal.publicHolidayTime += attendanceRecords[i].publicHolidayTime;
+  }
 };
 
 const getWindowSize = () => {
@@ -123,6 +141,7 @@ onMounted(() => {
   getCalendar();
   getWindowSize();
   fetchAttendanceRecodes();
+  calcCumulativeTotal();
   window.addEventListener("resize", getWindowSize);
 });
 </script>
@@ -302,6 +321,53 @@ onMounted(() => {
     <!-- 出勤カレンダーここまで -->
 
     <!-- 累計 -->
+    <table class="flex border-r border-l">
+      <div>
+        <thead>
+          <tr>
+            <th
+              class="flex flex-col justify-center h-20 w-24 bg-green-600 font-bold text-sm text-white"
+            >
+              <span>累計</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="w-full h-full">
+          <tr class="flex flex-col items-center h-36 w-full">
+            <td
+              class="flex justify-center items-center w-full text-base h-6 border-b"
+            >
+              {{ cumulativeTotal.overTime.toFixed(1) }}&nbsp;時間
+            </td>
+            <td
+              class="flex justify-center items-center w-full text-base h-6 border-b"
+            >
+              {{ cumulativeTotal.lateNightOverTime.toFixed(1) }}&nbsp;時間
+            </td>
+            <td
+              class="flex justify-center items-center w-full text-base h-6 border-b"
+            >
+              {{ cumulativeTotal.holidayWorkTime.toFixed(1) }}&nbsp;時間
+            </td>
+            <td
+              class="flex justify-center items-center w-full text-base h-6 border-b"
+            >
+              {{ cumulativeTotal.annualVacation.toFixed(1) }}&nbsp;日
+            </td>
+            <td
+              class="flex justify-center items-center w-full text-base h-6 border-b"
+            >
+              {{ cumulativeTotal.absenteeism.toFixed(1) }}&nbsp;日
+            </td>
+            <td
+              class="flex justify-center items-center w-full text-base h-6 border-b"
+            >
+              {{ cumulativeTotal.publicHolidayTime.toFixed(1) }}&nbsp;日
+            </td>
+          </tr>
+        </tbody>
+      </div>
+    </table>
 
     <!-- 累計ここまで -->
   </div>
