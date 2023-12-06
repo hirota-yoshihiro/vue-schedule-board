@@ -1,19 +1,28 @@
 <script setup lang="ts">
-import { reactive, onMounted, ref } from "vue";
+import { reactive, onMounted } from "vue";
 import moment from "moment";
 
 const data = reactive({
   start_month: "2024-2",
   end_month: "2024-2",
-  block_size: 30,
-  block_number: 0,
-  calendars: [],
+  calendars: {},
   inner_width: 0,
   inner_height: 0,
 });
+let projectIdList: Array<string> = reactive([]);
+let projectNameList: Array<string> = reactive([]);
+let cumulativeTotal: Array<{}> = reactive({});
 
+type Project = {
+  projectId: string;
+  projectName: string;
+  workDate: string;
+  workHours: number;
+};
+const projectList: Array<Project> = reactive([]);
+
+const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
 const getDays = (year: number, month: string, block_number: number) => {
-  const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
   let days = [];
   let date = moment(`${year}-${month}-016`);
   let num = date.daysInMonth();
@@ -38,19 +47,16 @@ const getCalendar = () => {
   for (let i = 0; i <= between_month; i++) {
     days = getDays(start_month.year(), start_month.format("MM"), block_number);
 
-    data.calendars.push({
+    data.calendars = {
+      days,
       date: start_month.format("YYYY年MM月"),
-      year: start_month.year(),
-      month: start_month.month(), //month(), 0,1..11と表示
-      start_block_number: block_number,
-      calendar: days.length,
-      days: days,
-    });
+    };
 
     start_month.add(1, "months");
     block_number = days[days.length - 1].block_number;
     block_number++;
   }
+
   return block_number;
 };
 
@@ -59,87 +65,79 @@ const getWindowSize = () => {
   data.inner_height = window.innerHeight;
 };
 
-onMounted(() => {
-  getCalendar();
-  getWindowSize();
-  window.addEventListener("resize", getWindowSize);
+const fetchProjectList = async () => {
+  const response: Array<Project> = [
+    {
+      projectId: "111",
+      projectName: "Androidカメラアプリ開発",
+      workDate: "2023-12-05T06:09:03.789Z",
+      workHours: 1,
+    },
+    {
+      projectId: "222",
+      projectName: "iPhoneカメラアプリ開発",
+      workDate: "2023-12-05T06:09:03.789Z",
+      workHours: 3,
+    },
+    {
+      projectId: "333",
+      projectName: "PCカメラアプリ開発",
+      workDate: "2023-12-05T06:09:03.789Z",
+      workHours: 4,
+    },
+    {
+      projectId: "222",
+      projectName: "iPhoneカメラアプリ開発",
+      workDate: "2023-12-05T06:09:03.789Z",
+      workHours: 3,
+    },
+    {
+      projectId: "333",
+      projectName: "PCカメラアプリ開発",
+      workDate: "2023-12-05T06:09:03.789Z",
+      workHours: 4,
+    },
+  ];
+
+  return response;
+};
+
+const pushProjectIdList = (projectList: Array<Project>) => {
+  const unorganizedProjectIdList = projectList.map(
+    (project) => project.projectId
+  );
+  const uniqueControlNumberList = [...new Set(unorganizedProjectIdList)];
+  projectIdList = Array.from(uniqueControlNumberList);
+};
+
+const pushProjectNameList = (projectList: Array<Project>) => {
+  const unorganizedProjectNameList = projectList.map(
+    (project) => project.projectName
+  );
+  const uniqueProjectNameList = [...new Set(unorganizedProjectNameList)];
+  projectNameList = Array.from(uniqueProjectNameList);
+};
+
+const calcCumulativeTotal = () => {
+  // for (let i = 0; i < attendanceRecords.length; i++) {
+  //   cumulativeTotal.overTime += attendanceRecords[i].overTime;
+  //   cumulativeTotal.lateNightOverTime += attendanceRecords[i].lateNightOverTime;
+  //   cumulativeTotal.holidayWorkTime += attendanceRecords[i].holidayWorkTime;
+  //   cumulativeTotal.absenteeism += attendanceRecords[i].absenteeism;
+  //   cumulativeTotal.publicHolidayTime += attendanceRecords[i].publicHolidayTime;
+  // }
+};
+
+onMounted(async () => {
+  const projectList = await fetchProjectList();
+  pushProjectIdList(projectList);
+  pushProjectNameList(projectList);
+  // pushProjectNameList(projectList);
+  // calcCumulativeTotal();
+  // getCalendar();
+  // getWindowSize();
+  // window.addEventListener("resize", getWindowSize);
 });
 </script>
 
-<template>
-  <div class="flex w-full">
-    <div id="gantt-content">
-      <div
-        id="gantt-task"
-        class="flex items-center bg-green-600 text-white h-20"
-        ref="task"
-      >
-        <div
-          id="gantt-task-title"
-          class="flex items-center bg-green-600 text-white h-20"
-        >
-          <div
-            class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-12 h-full"
-          >
-            No.
-          </div>
-
-          <div
-            class="border-t border-r border-b flex items-center justify-center font-bold text-xs w-48 h-full"
-          >
-            プロジェクト名
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="gantt-calendar" class="overflow-x-scroll w-full">
-      <div id="gantt-date" class="h-20">
-        <div id="gantt-year-month" class="relative h-8">
-          <div v-for="(calendar, index) in data.calendars" :key="index">
-            <div
-              class="bg-indigo-700 text-white border-b border-r border-t h-8 absolute font-bold text-sm flex items-center justify-center"
-              :style="`width:${calendar.calendar * data.block_size}px;left:${
-                calendar.start_block_number * data.block_size
-              }px`"
-            >
-              {{ calendar.date }}度
-            </div>
-          </div>
-        </div>
-        <div id="gantt-day" class="relative h-12">
-          <div id="gantt-calendar">
-            <div id="gantt-day" class="relative h-12">
-              <div v-for="(calendar, index) in data.calendars" :key="index">
-                <div v-for="(day, index) in calendar.days" :key="index">
-                  <div
-                    class="border-r h-12 absolute flex items-center justify-center flex-col font-bold text-xs"
-                    :style="`width:${data.block_size}px;left:${
-                      day.block_number * data.block_size
-                    }px`"
-                  >
-                    <span
-                      v-bind:class="
-                        day.dayOfWeek === '土' || day.dayOfWeek === '日'
-                          ? 'text-red-800 '
-                          : ''
-                      "
-                      >{{ day.day }}</span
-                    >
-                    <span
-                      v-bind:class="
-                        day.dayOfWeek === '土' || day.dayOfWeek === '日'
-                          ? 'text-red-800 '
-                          : ''
-                      "
-                      >{{ day.dayOfWeek }}</span
-                    >
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
+<template></template>
