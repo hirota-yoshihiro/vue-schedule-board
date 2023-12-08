@@ -15,7 +15,6 @@ onMounted(async () => {
   getCalendar();
   pushReactiveProjectIdAndNameList(projectList);
   pushReactiveProjectList(projectList);
-  calcCumulativeTotal(projectList);
   getWindowSize();
   window.addEventListener("resize", getWindowSize);
 });
@@ -66,7 +65,8 @@ type Project = {
   projectId: string;
   projectName: string;
   workDate: string;
-  workHours: number;
+  workHours?: number;
+  totalHours?: number;
   year?: number;
   month?: number;
   day?: number;
@@ -111,6 +111,30 @@ const fetchProjectList = async () => {
       workDate: "2024-03-06T06:09:03.789Z",
       workHours: 4,
     },
+    {
+      projectId: "555",
+      projectName: "PCアプリ開発",
+      workDate: "2024-03-05T06:09:03.789Z",
+      workHours: 4,
+    },
+    {
+      projectId: "555",
+      projectName: "PCアプリ開発",
+      workDate: "2024-03-07T06:09:03.789Z",
+      workHours: 4,
+    },
+    {
+      projectId: "666",
+      projectName: "PCアプリテスト",
+      workDate: "2024-02-16T06:09:03.789Z",
+      workHours: 4,
+    },
+    {
+      projectId: "666",
+      projectName: "PCアプリテスト",
+      workDate: "2024-02-17T06:09:03.789Z",
+      workHours: 4,
+    },
   ];
 
   return response;
@@ -132,33 +156,53 @@ const pushReactiveProjectList = (projectList: Array<Project>) => {
   );
 
   reactiveProjectList.push(...projectListWithOptionalProperties);
+  pushDailyTotalHoursList(projectListWithOptionalProperties);
 };
 
-const reactiveProjectIdAndNameList: Array<{ id: string; name: string }> =
-  reactive([]);
-const pushReactiveProjectIdAndNameList = (projectList: Array<Project>) => {
-  const uniqueProjectList = projectList.filter(
-    (project, index, self) =>
-      index === self.findIndex((p) => p.projectId === project.projectId)
-  );
+const pushDailyTotalHoursList = (projectList: Array<Project>) => {
+  const groupedByDate: Array<Project> = projectList.reduce((acc, project) => {
+    const existingDateEntry = acc.find((entry) => {
+      return (
+        `${entry.year}:${entry.month}:${entry.day}` ===
+        `${project.year}:${project.month}:${project.day}`
+      );
+    });
 
-  const uniqueProjectIdAndNameList = uniqueProjectList.map((project) => ({
-    id: project.projectId,
-    name: project.projectName,
-  }));
+    if (existingDateEntry) {
+      existingDateEntry.totalHours += project.workHours;
+    } else {
+      acc.push({
+        projectId: "",
+        projectName: "日付合計",
+        workDate: project.workDate,
+        totalHours: project.workHours,
+        year: project.year,
+        month: project.month,
+        day: project.day,
+      });
+    }
 
-  reactiveProjectIdAndNameList.length = 0;
-  reactiveProjectIdAndNameList.push(...uniqueProjectIdAndNameList);
+    return acc;
+  }, []);
+
+  reactiveProjectList.push(...groupedByDate);
 };
 
-type CumulativeTotal = {
+const reactiveProjectUniqueList: Array<{
   projectId: string;
-  totalHours: number;
-};
-const reactiveCumulativeTotal = reactive([]);
-const calcCumulativeTotal = (project: Array<Project>) => {
-  const responseWithTotalHours = project.reduce((acc, project) => {
-    const existingProject = acc.find((p) => p.projectId === project.projectId);
+  projectName: string;
+  totalHours?: number;
+  grandTotalHours?: number;
+}> = reactive([]);
+const pushReactiveProjectIdAndNameList = (projectList: Array<Project>) => {
+  const projectWithTotalHours: Array<{
+    projectId: string;
+    projectName: string;
+    totalHours: number;
+  }> = projectList.reduce((acc, project) => {
+    const existingProject: { projectId: string; totalHours: number } = acc.find(
+      (p) => p.projectId === project.projectId
+    );
 
     if (existingProject) {
       existingProject.totalHours += project.workHours;
@@ -173,7 +217,27 @@ const calcCumulativeTotal = (project: Array<Project>) => {
     return acc;
   }, []);
 
-  console.log(responseWithTotalHours);
+  reactiveProjectUniqueList.push(...projectWithTotalHours);
+  pushDailyTotal(projectWithTotalHours);
+};
+
+const pushDailyTotal = (
+  projectUniqueList: Array<{
+    projectId: string;
+    projectName: string;
+    totalHours?: number;
+    grandTotalHours?: number;
+  }>
+) => {
+  let grandTotalHours = 0;
+  for (let i = 0; i < projectUniqueList.length; i++) {
+    grandTotalHours += projectUniqueList[i].totalHours!;
+  }
+  reactiveProjectUniqueList.push({
+    projectId: "",
+    projectName: "日毎合計",
+    grandTotalHours,
+  });
 };
 
 const getWindowSize = () => {
@@ -196,14 +260,14 @@ const getWindowSize = () => {
 
       <tbody>
         <tr
-          v-for="{ id } in reactiveProjectIdAndNameList"
-          v-bind:key="id"
+          v-for="{ projectId } in reactiveProjectUniqueList"
+          v-bind:key="projectId"
           class="flex flex-col"
         >
           <td
             class="flex justify-center items-center w-full font-bold text-sm h-8 border-b"
           >
-            {{ id }}
+            {{ projectId }}
           </td>
         </tr>
       </tbody>
@@ -223,14 +287,14 @@ const getWindowSize = () => {
 
       <tbody>
         <tr
-          v-for="{ id, name } in reactiveProjectIdAndNameList"
-          v-bind:key="id"
+          v-for="{ projectId, projectName } in reactiveProjectUniqueList"
+          v-bind:key="projectId"
           class="flex flex-col"
         >
           <td
             class="flex justify-center items-center w-full font-bold text-sm h-8 border-b"
           >
-            {{ name }}
+            {{ projectName }}
           </td>
         </tr>
       </tbody>
@@ -259,8 +323,8 @@ const getWindowSize = () => {
       <!-- APIから取得したデータを表示 -->
       <tbody>
         <tr
-          v-for="{ id } in reactiveProjectIdAndNameList"
-          v-bind:key="id"
+          v-for="{ projectId } in reactiveProjectUniqueList"
+          v-bind:key="projectId"
           class="h-8"
         >
           <td
@@ -269,23 +333,21 @@ const getWindowSize = () => {
             class="text-center border"
           >
             <template
-              v-for="{
-                projectId,
-                year,
-                month,
-                day,
-                workHours,
-              } in reactiveProjectList"
+              v-for="projectList in reactiveProjectList"
               v-bind:key="projectId"
             >
               <template
                 v-if="
-                  id === projectId &&
+                  projectList.projectId === projectId &&
                   `${dayObj.year}:${dayObj.month}:${dayObj.day}` ===
-                    `${year}:${month}:${day}`
+                    `${projectList.year}:${projectList.month}:${projectList.day}`
                 "
               >
-                {{ workHours.toFixed(1) }}
+                {{
+                  projectList.workHours
+                    ? projectList.workHours?.toFixed(1)
+                    : projectList.totalHours?.toFixed(1)
+                }}
               </template>
             </template>
           </td>
@@ -306,8 +368,20 @@ const getWindowSize = () => {
       </thead>
 
       <tbody>
-        <tr>
-          <td></td>
+        <tr
+          v-for="{
+            projectId,
+            totalHours,
+            grandTotalHours,
+          } in reactiveProjectUniqueList"
+          class="flex justify-center items-center h-8 border-b"
+          v-bind:key="projectId"
+        >
+          <td>
+            {{
+              totalHours ? totalHours.toFixed(1) : grandTotalHours?.toFixed(1)
+            }}&nbsp;時間
+          </td>
         </tr>
       </tbody>
     </div>
