@@ -254,7 +254,7 @@ onMounted(() => {
               class="flex flex-col items-center border-r"
             >
               <tbody
-                v-if="dayObj.day == moment(record.workDate).date()"
+                v-if="dayObj.day === moment(record.workDate).date()"
                 class="w-full"
               >
                 <tr class="flex flex-col items-center h-36 w-full">

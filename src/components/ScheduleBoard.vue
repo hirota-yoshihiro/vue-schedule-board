@@ -20,11 +20,13 @@ const calcMonthly = () => {
       <span class="mb-8 text-center text-xl">2024年 2月度</span>
       <span class="mb-8 text-center text-2xl underline">氏名 広田 祥大</span>
     </div>
-    <div class="mb-8">
-      <AttendanceRecord />
-    </div>
-    <div>
-      <WorkReport />
+    <div class="flex flex-col items-center">
+      <div class="mb-8">
+        <AttendanceRecord />
+      </div>
+      <div>
+        <WorkReport />
+      </div>
     </div>
   </div>
 </template>
