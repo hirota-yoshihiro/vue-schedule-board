@@ -1,14 +1,50 @@
 <script setup lang="ts">
+import { reactive, onMounted } from "vue";
+import axios from "axios";
 import moment from "moment";
 
 import AttendanceRecord from "./AttendanceRecord.vue";
 import WorkReport from "./WorkReport.vue";
 
-const calcMonthly = () => {
-  const startMonthly = 16;
-  const endMonthly = 15;
+type ReactiveDataForPreview = {
+  attendanceRecords: any[];
+  projectWorkRecords: any[];
+};
 
-  console.log(moment());
+const reactiveDataForPreview: ReactiveDataForPreview = reactive({
+  attendanceRecords: [],
+  projectWorkRecords: [],
+});
+
+onMounted(async () => {
+  await fetchAttendanceRecodes();
+  await fetchProjectWorkHours();
+});
+
+const fetchAttendanceRecodes = async () => {
+  const date = formatDate();
+
+  // TODO PiniaからemployeeIdを取得する。
+  const employeeId = "1000";
+  let response;
+  try {
+    response = await axios.get(
+      `http://localhost:8000/api/attendance?date=2024-01-16&employeeId=${employeeId}`
+    );
+  } catch (err) {
+    window.alert(err);
+  }
+
+  const attendanceRecords: any[] = response?.data;
+  reactiveDataForPreview.attendanceRecords.push(...attendanceRecords);
+};
+
+const formatDate = () => {
+  // TODO "2024-01-16のような形式に整形する"
+};
+
+const fetchProjectWorkHours = async () => {
+  const projectWorkHours = await axios.get();
 };
 </script>
 <template>
@@ -29,4 +65,6 @@ const calcMonthly = () => {
       </div>
     </div>
   </div>
+
+  <div>{{ reactiveDataForPreview.attendanceRecords[0]?.id }}</div>
 </template>
