@@ -5,66 +5,203 @@ import moment from "moment";
 
 import AttendanceRecord from "./AttendanceRecord.vue";
 import WorkReport from "./WorkReport.vue";
+import { calcDuringMonth, formatCurrentDate } from "../libs/functions";
 
-type ReactiveDataForPreview = {
+onMounted(async () => {
+  const currentDate = formatCurrentDate();
+  pushCurrentMonthly(currentDate);
+  // TODO PiniaからemployeeUserIdを取得する。
+  const employeeUserId = "1234";
+
+  const employee = await fetchEmployee(employeeUserId);
+  pushReactiveEmployee(employee);
+
+  const employeeId = getEmployeeId(employee);
+  const attendanceRecords: any[] = await fetchAttendanceRecodes(
+    currentDate,
+    employeeId
+  );
+  pushReactiveAttendanceRecords(attendanceRecords);
+
+  const projectWorkHours: any[] = await fetchProjectWorkHours(
+    currentDate,
+    employeeId
+  );
+  pushReactiveProjectWorkRecords(projectWorkHours);
+});
+
+type Employee = {
+  id: string;
+  branch: string;
+  department: string;
+  firstName: string;
+  lastName: string;
+  section: string;
+};
+
+type ReactiveData = {
+  employee: Employee;
+  currentMonthly: { year: number | null; month: number | null };
   attendanceRecords: any[];
   projectWorkRecords: any[];
 };
 
-const reactiveDataForPreview: ReactiveDataForPreview = reactive({
+const reactiveData: ReactiveData = reactive({
+  employee: {
+    id: "",
+    branch: "",
+    department: "",
+    firstName: "",
+    lastName: "",
+    section: "",
+  },
+  currentMonthly: { year: null, month: null },
   attendanceRecords: [],
   projectWorkRecords: [],
 });
 
-onMounted(async () => {
-  await fetchAttendanceRecodes();
-  await fetchProjectWorkHours();
-});
+const pushCurrentMonthly = (date: string) => {
+  const { startDate } = calcDuringMonth(date);
+  const year = moment(startDate).year() as number;
+  const month = (moment(startDate).month() + 1) as number;
+  reactiveData.currentMonthly.year = year;
+  reactiveData.currentMonthly.month = month;
+};
 
-const fetchAttendanceRecodes = async () => {
-  const date = formatDate();
-
-  // TODO PiniaからemployeeIdを取得する。
-  const employeeId = "1000";
+const fetchEmployee = async (employeeUserId: string) => {
   let response;
+
   try {
     response = await axios.get(
-      `http://localhost:8000/api/attendance?date=2024-01-16&employeeId=${employeeId}`
+      `http://localhost:8000/api/auth/employee/exist?employeeUserId=${employeeUserId}`
     );
   } catch (err) {
     window.alert(err);
   }
 
-  const attendanceRecords: any[] = response?.data;
-  reactiveDataForPreview.attendanceRecords.push(...attendanceRecords);
+  const employee: Employee = response?.data;
+  return employee;
 };
 
-const formatDate = () => {
-  // TODO "2024-01-16のような形式に整形する"
+const pushReactiveEmployee = (employee: any) => {
+  reactiveData.employee.id = employee.id;
+  reactiveData.employee.branch = employee.branch;
+  reactiveData.employee.department = employee.department;
+  reactiveData.employee.firstName = employee.firstName;
+  reactiveData.employee.lastName = employee.lastName;
+  reactiveData.employee.section = employee.section;
 };
 
-const fetchProjectWorkHours = async () => {
-  const projectWorkHours = await axios.get();
+const getEmployeeId = (employee: Employee) => {
+  return employee.id;
+};
+
+const fetchAttendanceRecodes = async (
+  currentDate: string,
+  employeeId: string
+) => {
+  let response;
+
+  try {
+    response = await axios.get(
+      `http://localhost:8000/api/attendance?date=${currentDate}&employeeId=${employeeId}`
+    );
+  } catch (err) {
+    window.alert(err);
+  }
+
+  return response?.data;
+};
+
+const pushReactiveAttendanceRecords = (attendanceRecords: any[]) => {
+  reactiveData.attendanceRecords.push(...attendanceRecords);
+};
+
+const fetchProjectWorkHours = async (
+  currentDate: string,
+  employeeId: string
+) => {
+  let response;
+
+  try {
+    response = await axios.get(
+      `http://localhost:8000/api/project_work_hours?date=${currentDate}&employeeId=${employeeId}`
+    );
+  } catch (err) {
+    window.alert(err);
+  }
+
+  return response?.data;
+};
+
+const pushReactiveProjectWorkRecords = (projectWorkHours: any[]) => {
+  reactiveData.projectWorkRecords.push(...projectWorkHours);
 };
 </script>
+
 <template>
   <div class="flex flex-col">
+    <!-- 従業員情報 -->
+    <div class="flex justify-end w-full">
+      <div class="w-80 border-4 border-blue-200">
+        <div class="flex">
+          <p class="w-36 text-center border-r-2 border-b-2 border-blue-200">
+            所属事業所
+          </p>
+          <p class="w-full border-l-2 border-b-2 border-blue-200">
+            {{ reactiveData.employee.branch }}
+          </p>
+        </div>
+        <div class="flex">
+          <p class="w-36 text-center border-r-2 border-b-2 border-blue-200">
+            所属部署
+          </p>
+          <p class="w-full border-l-2 border-b-2 border-blue-200">
+            {{ reactiveData.employee.department }}
+          </p>
+        </div>
+        <div class="flex">
+          <p class="w-36 text-center border-r-2 border-b-2 border-blue-200">
+            所属室/課
+          </p>
+          <p class="w-full border-l-2 border-b-2 border-blue-200">
+            {{ reactiveData.employee.section }}
+          </p>
+        </div>
+        <div class="flex">
+          <p class="w-36 text-center border-r-2 border-b-2 border-blue-200">
+            社員番号
+          </p>
+          <p class="w-full border-l-2 border-b-2 border-blue-200">
+            {{ reactiveData.employee.id }}
+          </p>
+        </div>
+      </div>
+    </div>
+    <!-- 従業員情報ここまで -->
+
     <h1 class="mb-8 font-bold text-2xl underline text-center">
       出勤簿 兼 作業報告書
     </h1>
     <div class="flex justify-around">
-      <span class="mb-8 text-center text-xl">2024年 2月度</span>
-      <span class="mb-8 text-center text-2xl underline">氏名 広田 祥大</span>
+      <span class="mb-8 text-center text-xl"
+        >{{ reactiveData.currentMonthly.year }}年
+        {{ reactiveData.currentMonthly.month }}月度</span
+      >
+      <span class="mb-8 text-center text-2xl underline"
+        >氏名 {{ reactiveData.employee.firstName }}
+        {{ reactiveData.employee.lastName }}</span
+      >
     </div>
     <div class="flex flex-col items-center">
       <div class="mb-8">
-        <AttendanceRecord />
+        <AttendanceRecord
+          :attendance-records="reactiveData.attendanceRecords"
+        />
       </div>
       <div>
         <WorkReport />
       </div>
     </div>
   </div>
-
-  <div>{{ reactiveDataForPreview.attendanceRecords[0]?.id }}</div>
 </template>

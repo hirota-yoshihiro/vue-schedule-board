@@ -1,21 +1,20 @@
 <script setup lang="ts">
-import { reactive, onMounted, watch } from "vue";
+import { reactive, onMounted } from "vue";
 import moment from "moment";
 
-import { caluCurrentMonthly } from "../libs/functions.ts";
-
-const { attendanceRecords } = defineProps(["attendanceRecords"]);
+const { currentMonthlyMonth, currentMonthlyYear } = defineProps([
+  "currentMonthlyYear",
+  "currentMonthlyMonth",
+  "attendanceRecords",
+]);
 
 onMounted(() => {
   getCalendar();
 
+  calcCumulativeTotal();
+
   getWindowSize();
   window.addEventListener("resize", getWindowSize);
-});
-
-watch(attendanceRecords, () => {
-  calcCumulativeTotal();
-  console.log(attendanceRecords);
 });
 
 const reactiveData = reactive({
@@ -38,60 +37,60 @@ const reactiveData = reactive({
     absenteeism: 0.0,
     publicHolidayTime: 0.0,
   },
-  start_month: caluCurrentMonthly(),
-  end_month: caluCurrentMonthly(),
+  start_month: "2024-2",
+  end_month: "2024-2",
   inner_width: 0,
   inner_height: 0,
 });
 
 //  APIから取得した仮の勤怠入力データを想定。
-// const attendanceRecords = reactive([
-//   {
-//     workDate: "2024-2-16",
-//     overTime: 1.0,
-//     lateNightOverTime: 0,
-//     holidayWorkTime: 0,
-//     anuualVacation: 0,
-//     absenteeism: 0,
-//     publicHolidayTime: 0,
-//   },
-//   {
-//     workDate: "2024-2-17",
-//     overTime: 1.0,
-//     lateNightOverTime: 0,
-//     holidayWorkTime: 0,
-//     anuualVacation: 0,
-//     absenteeism: 0,
-//     publicHolidayTime: 0,
-//   },
-//   {
-//     workDate: "2024-2-18",
-//     overTime: 1.0,
-//     lateNightOverTime: 0,
-//     holidayWorkTime: 0,
-//     anuualVacation: 0,
-//     absenteeism: 0,
-//     publicHolidayTime: 0,
-//   },
-//   {
-//     workDate: "2024-2-19",
-//     overTime: 1.0,
-//     lateNightOverTime: 0,
-//     holidayWorkTime: 0,
-//     anuualVacation: 0,
-//     absenteeism: 0,
-//     publicHolidayTime: 0,
-//   },
-//   {
-//     workDate: "2024-2-20",
-//     overTime: 1.0,
-//     lateNightOverTime: 2.0,
-//     holidayWorkTime: 2.0,
-//     anuualVacation: 0.0,
-//     absenteeism: 0.0,
-//     publicHolidayTime: 3.0,
-//   },
-// ]);
+const attendanceRecords = reactive([
+  {
+    workDate: "2024-2-16",
+    overTime: 1.0,
+    lateNightOverTime: 0,
+    holidayWorkTime: 0,
+    anuualVacation: 0,
+    absenteeism: 0,
+    publicHolidayTime: 0,
+  },
+  {
+    workDate: "2024-2-17",
+    overTime: 1.0,
+    lateNightOverTime: 0,
+    holidayWorkTime: 0,
+    anuualVacation: 0,
+    absenteeism: 0,
+    publicHolidayTime: 0,
+  },
+  {
+    workDate: "2024-2-18",
+    overTime: 1.0,
+    lateNightOverTime: 0,
+    holidayWorkTime: 0,
+    anuualVacation: 0,
+    absenteeism: 0,
+    publicHolidayTime: 0,
+  },
+  {
+    workDate: "2024-2-19",
+    overTime: 1.0,
+    lateNightOverTime: 0,
+    holidayWorkTime: 0,
+    anuualVacation: 0,
+    absenteeism: 0,
+    publicHolidayTime: 0,
+  },
+  {
+    workDate: "2024-2-20",
+    overTime: 1.0,
+    lateNightOverTime: 2.0,
+    holidayWorkTime: 2.0,
+    anuualVacation: 0.0,
+    absenteeism: 0.0,
+    publicHolidayTime: 3.0,
+  },
+]);
 
 // APIから取得した勤怠入力仮のデータここまで
 
@@ -159,6 +158,7 @@ const getWindowSize = () => {
 </script>
 
 <template>
+  <div>{{ currentMonthlyYear }}</div>
   <div class="flex h-56">
     <div class="flex items-center h-20">
       <div class="flex items-center h-full">
