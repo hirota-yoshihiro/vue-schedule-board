@@ -1,6 +1,14 @@
 import moment from "moment";
 import momentTimeZone from "moment-timezone";
 
+const getDayInUTC = (date: Date) => {
+  const dateInJST = momentTimeZone(date);
+
+  const dateInUTC = dateInJST.tz("Europe/London").date();
+
+  return dateInUTC;
+};
+
 const formatCurrentDate = () => {
   const currentDate = moment().format("YYYY-MM-DD");
   return currentDate;
@@ -141,4 +149,4 @@ const caluCurrentMonthly = () => {
   return cuurentMonthly;
 };
 
-export { calcDuringMonth, formatCurrentDate, caluCurrentMonthly };
+export { getDayInUTC, calcDuringMonth, formatCurrentDate, caluCurrentMonthly };

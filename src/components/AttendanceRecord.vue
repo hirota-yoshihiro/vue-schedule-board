@@ -2,7 +2,7 @@
 import { reactive, onMounted, watch } from "vue";
 import moment from "moment";
 
-import { caluCurrentMonthly } from "../libs/functions.ts";
+import { caluCurrentMonthly, getDayInUTC } from "../libs/functions.ts";
 
 const { attendanceRecords } = defineProps(["attendanceRecords"]);
 
@@ -15,6 +15,7 @@ onMounted(() => {
 
 watch(attendanceRecords, () => {
   calcCumulativeTotal();
+
   console.log(attendanceRecords);
 });
 
@@ -43,57 +44,6 @@ const reactiveData = reactive({
   inner_width: 0,
   inner_height: 0,
 });
-
-//  APIから取得した仮の勤怠入力データを想定。
-// const attendanceRecords = reactive([
-//   {
-//     workDate: "2024-2-16",
-//     overTime: 1.0,
-//     lateNightOverTime: 0,
-//     holidayWorkTime: 0,
-//     anuualVacation: 0,
-//     absenteeism: 0,
-//     publicHolidayTime: 0,
-//   },
-//   {
-//     workDate: "2024-2-17",
-//     overTime: 1.0,
-//     lateNightOverTime: 0,
-//     holidayWorkTime: 0,
-//     anuualVacation: 0,
-//     absenteeism: 0,
-//     publicHolidayTime: 0,
-//   },
-//   {
-//     workDate: "2024-2-18",
-//     overTime: 1.0,
-//     lateNightOverTime: 0,
-//     holidayWorkTime: 0,
-//     anuualVacation: 0,
-//     absenteeism: 0,
-//     publicHolidayTime: 0,
-//   },
-//   {
-//     workDate: "2024-2-19",
-//     overTime: 1.0,
-//     lateNightOverTime: 0,
-//     holidayWorkTime: 0,
-//     anuualVacation: 0,
-//     absenteeism: 0,
-//     publicHolidayTime: 0,
-//   },
-//   {
-//     workDate: "2024-2-20",
-//     overTime: 1.0,
-//     lateNightOverTime: 2.0,
-//     holidayWorkTime: 2.0,
-//     anuualVacation: 0.0,
-//     absenteeism: 0.0,
-//     publicHolidayTime: 3.0,
-//   },
-// ]);
-
-// APIから取得した勤怠入力仮のデータここまで
 
 const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
 const getDays = (year: number, month: string, block_number: number) => {
@@ -266,7 +216,7 @@ const getWindowSize = () => {
               class="flex flex-col items-center border-r"
             >
               <tbody
-                v-if="dayObj.day === moment(record.workDate).date()"
+                v-if="dayObj.day === getDayInUTC(record.workDate)"
                 class="w-full"
               >
                 <tr class="flex flex-col items-center h-36 w-full">
