@@ -69,19 +69,20 @@ const calcCumulativeTotal = () => {
 
 <template>
   <div class="flex h-56">
-    <div class="flex items-center h-20">
-      <div class="flex items-center h-full">
-        <!-- 出勤メモ -->
-        <div class="flex flex-col h-full border-r">
-          <div
-            class="flex flex-col justify-center items-center h-full w-48 bg-green-600 font-bold text-sm text-white"
-          >
-            出勤時間に関するメモ
-          </div>
+    <!-- 出勤メモ -->
+    <div class="">
+      <div class="flex items-center h-20">
+        <div
+          class="flex flex-col justify-center items-center border-r h-full w-48 bg-green-600 font-bold text-sm text-white"
+        >
+          出勤時間に関するメモ
         </div>
-        <!-- 出勤メモここまで -->
+      </div>
+      <div class="h-full">
+        <input type="text" class="w-full h-full" />
       </div>
     </div>
+    <!-- 出勤メモここまで -->
 
     <!-- 種別 -->
     <table class="flex border-r border-l">
