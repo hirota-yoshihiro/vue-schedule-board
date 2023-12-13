@@ -3,7 +3,7 @@ import { reactive, onMounted, watch } from "vue";
 import moment from "moment";
 
 import { getCalendar } from "../libs/calendar.ts";
-import { caluCurrentMonthly } from "../libs/date.ts";
+import { caluCurrentMonthly, getDayInUTC } from "../libs/date.ts";
 import { getWindowSize } from "../libs/functions";
 
 const { projectWorkHourRecords } = defineProps(["projectWorkHourRecords"]);
@@ -20,13 +20,12 @@ const init = () => {
 };
 
 watch(projectWorkHourRecords, () => {
-  pushReactiveProjectUniqueList(projectWorkHourRecords);
+  const projectWithTotalHours = pushReactiveProjectUniqueList(
+    projectWorkHourRecords
+  );
+  pushDailyTotal(projectWithTotalHours);
 
-  pushDailyTotal();
-
-  pushReactiveProjectList(projectWorkHourRecords);
-
-  pushDailyTotalHoursList();
+  // pushReactiveProjectList(projectWorkHourRecords);
 });
 
 type ProjectWorkHours = {
@@ -93,13 +92,21 @@ const pushReactiveProjectUniqueList = (
   }, []);
 
   reactiveData.projectUniqueList.push(...projectWithTotalHours);
+
+  return projectWithTotalHours;
 };
 
-const pushDailyTotal = () => {
+const pushDailyTotal = (
+  projectUniqueList: Array<{
+    projectId: string;
+    projectName: string;
+    totalHours?: number;
+    grandTotalHours?: number;
+  }>
+) => {
   let grandTotalHours = 0;
-
-  for (let i = 0; i < reactiveData.projectUniqueList.length; i++) {
-    grandTotalHours += reactiveData.projectUniqueList[i].totalHours!;
+  for (let i = 0; i < projectUniqueList.length; i++) {
+    grandTotalHours += projectUniqueList[i].totalHours!;
   }
 
   reactiveData.projectUniqueList.push({
@@ -109,63 +116,94 @@ const pushDailyTotal = () => {
   });
 };
 
-type Project = {
-  projectId: string;
-  projectName: string;
-  workDate: string;
-  workHours?: number;
-  totalHours?: number;
-  year?: number;
-  month?: number;
-  day?: number;
-};
+// const pushReactiveProjectUniqueList = (
+//   projectWorkHourRecords: Array<ProjectWorkHours>
+// ) => {
+//   const copyProjectWorkHourRecords = [...projectWorkHourRecords];
 
-const pushReactiveProjectList = (projectList: Array<Project>) => {
-  const projectListWithOptionalProperties: Array<Project> = projectList.map(
-    (project) => ({
-      projectId: project.projectId,
-      projectName: project.projectName,
-      workDate: project.workDate,
-      workHours: project.workHours,
-      year: moment(project.workDate).year(),
-      month: moment(project.workDate).month() + 1,
-      day: moment(project.workDate).date(),
-    })
-  );
-  reactiveData.projectList.push(...projectListWithOptionalProperties);
-};
+//   const projectWithTotalHours: Array<{
+//     projectId: string;
+//     projectName: string;
+//     totalHours: number;
+//   }> = projectWorkHourRecords.reduce((acc, projectList) => {
+//     const existingProject: {
+//       projectId: string;
+//       totalHours: number;
+//       projectName: string;
+//     } = acc.find((ele) => ele.projectId === projectList.projectId);
+//     if (existingProject) {
+//       existingProject.totalHours += Number(projectList.workHours);
+//     } else {
+//       acc.push({
+//         projectId: projectList.projectId,
+//         projectName: projectList.project.name,
+//         totalHours: projectList.workHours,
+//       });
+//     }
+//     return acc;
+//   }, []);
 
-const pushDailyTotalHoursList = () => {
-  const groupedByDate: Array<Project> = reactiveData.projectList.reduce(
-    (acc, project) => {
-      const existingDateEntry = acc.find((entry) => {
-        return (
-          `${entry.year}:${entry.month}:${entry.day}` ===
-          `${project.year}:${project.month}:${project.day}`
-        );
-      });
+//   reactiveData.projectUniqueList.push(...projectWithTotalHours);
 
-      if (existingDateEntry) {
-        existingDateEntry.totalHours += project.workHours;
-      } else {
-        acc.push({
-          projectId: "",
-          projectName: "日付合計",
-          workDate: project.workDate,
-          totalHours: project.workHours,
-          year: project.year,
-          month: project.month,
-          day: project.day,
-        });
-      }
+//   console.log(reactiveData);
+//   return projectWithTotalHours;
+// };
 
-      return acc;
-    },
-    []
-  );
+// type Project = {
+//   projectId: string;
+//   projectName: string;
+//   workDate: string;
+//   workHours?: number;
+//   totalHours?: number;
+//   year?: number;
+//   month?: number;
+//   day?: number;
+// };
 
-  reactiveData.projectList.push(...groupedByDate);
-};
+// const pushReactiveProjectList = (projectList: Array<Project>) => {
+//   const projectListWithOptionalProperties: Array<Project> = projectList.map(
+//     (project) => ({
+//       projectId: project.projectId,
+//       projectName: project.projectName,
+//       workDate: project.workDate,
+//       workHours: project.workHours,
+//       year: moment(project.workDate).year(),
+//       month: moment(project.workDate).month() + 1,
+//       day: moment(project.workDate).date(),
+//     })
+//   );
+//   reactiveData.projectList.push(...projectListWithOptionalProperties);
+//   pushDailyTotalHoursList(projectListWithOptionalProperties);
+// };
+
+// const pushDailyTotalHoursList = (projectList: Array<Project>) => {
+//   const groupedByDate: Array<Project> = projectList.reduce((acc, project) => {
+//     const existingDateEntry = acc.find((entry) => {
+//       return (
+//         `${entry.year}:${entry.month}:${entry.day}` ===
+//         `${project.year}:${project.month}:${project.day}`
+//       );
+//     });
+
+//     if (existingDateEntry) {
+//       existingDateEntry.totalHours += project.workHours;
+//     } else {
+//       acc.push({
+//         projectId: "",
+//         projectName: "日付合計",
+//         workDate: project.workDate,
+//         totalHours: project.workHours,
+//         year: project.year,
+//         month: project.month,
+//         day: project.day,
+//       });
+//     }
+
+//     return acc;
+//   }, []);
+
+//   reactiveData.projectList.push(...groupedByDate);
+// };
 </script>
 
 <template>

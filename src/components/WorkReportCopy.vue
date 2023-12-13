@@ -3,111 +3,29 @@ import { reactive, onMounted, watch } from "vue";
 import moment from "moment";
 
 import { getCalendar } from "../libs/calendar.ts";
-import { caluCurrentMonthly } from "../libs/date.ts";
+import { caluCurrentMonthly, getDayInUTC } from "../libs/date.ts";
 import { getWindowSize } from "../libs/functions";
 
-const { projectWorkHourRecords } = defineProps(["projectWorkHourRecords"]);
-
 onMounted(async () => {
-  init();
-});
+  const projectList = await fetchProjectList();
 
-const init = () => {
   getCalendar(reactiveData);
+
+  pushReactiveProjectIdAndNameList(projectList);
+  pushReactiveProjectList(projectList);
 
   getWindowSize(reactiveData);
   window.addEventListener("resize", getWindowSize);
-};
-
-watch(projectWorkHourRecords, () => {
-  pushReactiveProjectUniqueList(projectWorkHourRecords);
-
-  pushDailyTotal();
-
-  pushReactiveProjectList(projectWorkHourRecords);
-
-  pushDailyTotalHoursList();
 });
 
-type ProjectWorkHours = {
-  employeeId: string;
-  id: number;
-  project: {
-    id: string;
-    name: string;
-    type: string;
-  };
-  projectId: string;
-  workDate: Date;
-  workHours: number;
-};
-
-type ReactiveData = {
-  start_month: string;
-  end_month: string;
-  calendars: {};
-  inner_width: number;
-  inner_height: number;
-  projectList: Project[];
-  projectUniqueList: {
-    projectId: string;
-    projectName: string;
-    totalHours?: number;
-    grandTotalHours?: number;
-  }[];
-};
-
-const reactiveData: ReactiveData = reactive({
-  start_month: caluCurrentMonthly(),
-  end_month: caluCurrentMonthly(),
+const reactiveData = reactive({
+  start_month: "2024-02",
+  end_month: "2024-02",
   calendars: {},
   inner_width: 0,
   inner_height: 0,
   projectList: [],
-  projectUniqueList: [],
 });
-
-const pushReactiveProjectUniqueList = (
-  projectWorkHourRecords: Array<ProjectWorkHours>
-) => {
-  const projectWithTotalHours: Array<{
-    projectId: string;
-    projectName: string;
-    totalHours: number;
-  }> = projectWorkHourRecords.reduce((acc, projectList) => {
-    const existingProject: {
-      projectId: string;
-      totalHours: number;
-      projectName: string;
-    } = acc.find((ele) => ele.projectId === projectList.projectId);
-    if (existingProject) {
-      existingProject.totalHours += projectList.workHours;
-    } else {
-      acc.push({
-        projectId: projectList.projectId,
-        projectName: projectList.project.name,
-        totalHours: projectList.workHours,
-      });
-    }
-    return acc;
-  }, []);
-
-  reactiveData.projectUniqueList.push(...projectWithTotalHours);
-};
-
-const pushDailyTotal = () => {
-  let grandTotalHours = 0;
-
-  for (let i = 0; i < reactiveData.projectUniqueList.length; i++) {
-    grandTotalHours += reactiveData.projectUniqueList[i].totalHours!;
-  }
-
-  reactiveData.projectUniqueList.push({
-    projectId: "",
-    projectName: "日毎合計",
-    grandTotalHours,
-  });
-};
 
 type Project = {
   projectId: string;
@@ -120,6 +38,76 @@ type Project = {
   day?: number;
 };
 
+// APIでサーバから取得した仮のプロジェクトリスト
+const fetchProjectList = async () => {
+  const response: Array<Project> = [
+    {
+      projectId: "111",
+      projectName: "Androidカメラアプリ開発",
+      workDate: "2024-03-05T06:09:03.789Z",
+      workHours: 1,
+    },
+    {
+      projectId: "222",
+      projectName: "iPhoneカメラアプリ開発",
+      workDate: "2024-03-05T06:09:03.789Z",
+      workHours: 3,
+    },
+    {
+      projectId: "333",
+      projectName: "PCカメラアプリ開発",
+      workDate: "2024-03-05T06:09:03.789Z",
+      workHours: 4,
+    },
+    {
+      projectId: "222",
+      projectName: "iPhoneカメラアプリ開発",
+      workDate: "2024-03-06T06:09:03.789Z",
+      workHours: 3,
+    },
+    {
+      projectId: "333",
+      projectName: "PCカメラアプリ開発",
+      workDate: "2024-03-06T06:09:03.789Z",
+      workHours: 4,
+    },
+    {
+      projectId: "444",
+      projectName: "PCゲーム開発",
+      workDate: "2024-03-06T06:09:03.789Z",
+      workHours: 4,
+    },
+    {
+      projectId: "555",
+      projectName: "PCアプリ開発",
+      workDate: "2024-03-05T06:09:03.789Z",
+      workHours: 4,
+    },
+    {
+      projectId: "555",
+      projectName: "PCアプリ開発",
+      workDate: "2024-03-07T06:09:03.789Z",
+      workHours: 4,
+    },
+    {
+      projectId: "666",
+      projectName: "PCアプリテスト",
+      workDate: "2024-02-16T06:09:03.789Z",
+      workHours: 4,
+    },
+    {
+      projectId: "666",
+      projectName: "PCアプリテスト",
+      workDate: "2024-02-17T06:09:03.789Z",
+      workHours: 4,
+    },
+  ];
+
+  return response;
+};
+
+// APIでサーバから取得した仮データここまで
+const reactiveProjectList: Array<Project> = reactive([]);
 const pushReactiveProjectList = (projectList: Array<Project>) => {
   const projectListWithOptionalProperties: Array<Project> = projectList.map(
     (project) => ({
@@ -132,39 +120,90 @@ const pushReactiveProjectList = (projectList: Array<Project>) => {
       day: moment(project.workDate).date(),
     })
   );
-  reactiveData.projectList.push(...projectListWithOptionalProperties);
+
+  reactiveProjectList.push(...projectListWithOptionalProperties);
+  pushDailyTotalHoursList(projectListWithOptionalProperties);
 };
 
-const pushDailyTotalHoursList = () => {
-  const groupedByDate: Array<Project> = reactiveData.projectList.reduce(
-    (acc, project) => {
-      const existingDateEntry = acc.find((entry) => {
-        return (
-          `${entry.year}:${entry.month}:${entry.day}` ===
-          `${project.year}:${project.month}:${project.day}`
-        );
+const pushDailyTotalHoursList = (projectList: Array<Project>) => {
+  const groupedByDate: Array<Project> = projectList.reduce((acc, project) => {
+    const existingDateEntry = acc.find((entry) => {
+      return (
+        `${entry.year}:${entry.month}:${entry.day}` ===
+        `${project.year}:${project.month}:${project.day}`
+      );
+    });
+
+    if (existingDateEntry) {
+      existingDateEntry.totalHours += project.workHours;
+    } else {
+      acc.push({
+        projectId: "",
+        projectName: "日付合計",
+        workDate: project.workDate,
+        totalHours: project.workHours,
+        year: project.year,
+        month: project.month,
+        day: project.day,
       });
+    }
 
-      if (existingDateEntry) {
-        existingDateEntry.totalHours += project.workHours;
-      } else {
-        acc.push({
-          projectId: "",
-          projectName: "日付合計",
-          workDate: project.workDate,
-          totalHours: project.workHours,
-          year: project.year,
-          month: project.month,
-          day: project.day,
-        });
-      }
+    return acc;
+  }, []);
 
-      return acc;
-    },
-    []
-  );
+  reactiveProjectList.push(...groupedByDate);
+};
 
-  reactiveData.projectList.push(...groupedByDate);
+const reactiveProjectUniqueList: Array<{
+  projectId: string;
+  projectName: string;
+  totalHours?: number;
+  grandTotalHours?: number;
+}> = reactive([]);
+const pushReactiveProjectIdAndNameList = (projectList: Array<Project>) => {
+  const projectWithTotalHours: Array<{
+    projectId: string;
+    projectName: string;
+    totalHours: number;
+  }> = projectList.reduce((acc, project) => {
+    const existingProject: { projectId: string; totalHours: number } = acc.find(
+      (p) => p.projectId === project.projectId
+    );
+
+    if (existingProject) {
+      existingProject.totalHours += project.workHours;
+    } else {
+      acc.push({
+        projectId: project.projectId,
+        projectName: project.projectName,
+        totalHours: project.workHours,
+      });
+    }
+
+    return acc;
+  }, []);
+
+  reactiveProjectUniqueList.push(...projectWithTotalHours);
+  pushDailyTotal(projectWithTotalHours);
+};
+
+const pushDailyTotal = (
+  projectUniqueList: Array<{
+    projectId: string;
+    projectName: string;
+    totalHours?: number;
+    grandTotalHours?: number;
+  }>
+) => {
+  let grandTotalHours = 0;
+  for (let i = 0; i < projectUniqueList.length; i++) {
+    grandTotalHours += projectUniqueList[i].totalHours!;
+  }
+  reactiveProjectUniqueList.push({
+    projectId: "",
+    projectName: "日毎合計",
+    grandTotalHours,
+  });
 };
 </script>
 
@@ -182,7 +221,7 @@ const pushDailyTotalHoursList = () => {
 
       <tbody>
         <tr
-          v-for="{ projectId } in reactiveData.projectUniqueList"
+          v-for="{ projectId } in reactiveProjectUniqueList"
           v-bind:key="projectId"
           class="flex flex-col"
         >
@@ -209,7 +248,7 @@ const pushDailyTotalHoursList = () => {
 
       <tbody>
         <tr
-          v-for="{ projectId, projectName } in reactiveData.projectUniqueList"
+          v-for="{ projectId, projectName } in reactiveProjectUniqueList"
           v-bind:key="projectId"
           class="flex flex-col"
         >
@@ -245,7 +284,7 @@ const pushDailyTotalHoursList = () => {
       <!-- APIから取得したデータを表示 -->
       <tbody>
         <tr
-          v-for="{ projectId } in reactiveData.projectUniqueList"
+          v-for="{ projectId } in reactiveProjectUniqueList"
           v-bind:key="projectId"
           class="h-8"
         >
@@ -255,7 +294,7 @@ const pushDailyTotalHoursList = () => {
             class="text-center border"
           >
             <template
-              v-for="projectList in reactiveData.projectList"
+              v-for="projectList in reactiveProjectList"
               v-bind:key="projectId"
             >
               <template
@@ -295,7 +334,7 @@ const pushDailyTotalHoursList = () => {
             projectId,
             totalHours,
             grandTotalHours,
-          } in reactiveData.projectUniqueList"
+          } in reactiveProjectUniqueList"
           class="flex justify-center items-center h-8 border-b"
           v-bind:key="projectId"
         >

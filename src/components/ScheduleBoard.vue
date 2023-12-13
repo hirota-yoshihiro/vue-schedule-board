@@ -5,11 +5,16 @@ import moment from "moment";
 
 import AttendanceRecord from "./AttendanceRecord.vue";
 import WorkReport from "./WorkReport.vue";
-import { calcDuringMonth, formatCurrentDate } from "../libs/functions";
+import { calcDuringMonth, formatCurrentDate } from "../libs/date";
 
 onMounted(async () => {
+  await init();
+});
+
+const init = async () => {
   const currentDate = formatCurrentDate();
   pushCurrentMonthly(currentDate);
+
   // TODO PiniaからemployeeUserIdを取得する。
   const employeeUserId = "1234";
 
@@ -23,12 +28,12 @@ onMounted(async () => {
   );
   pushReactiveAttendanceRecords(attendanceRecords);
 
-  const projectWorkHours: any[] = await fetchProjectWorkHours(
+  const projectWorkHourRecords: any[] = await fetchProjectWorkHourRecords(
     currentDate,
     employeeId
   );
-  pushReactiveProjectWorkRecords(projectWorkHours);
-});
+  pushReactiveProjectWorkHourRecords(projectWorkHourRecords);
+};
 
 type Employee = {
   id: string;
@@ -117,7 +122,7 @@ const pushReactiveAttendanceRecords = (attendanceRecords: any[]) => {
   reactiveData.attendanceRecords.push(...attendanceRecords);
 };
 
-const fetchProjectWorkHours = async (
+const fetchProjectWorkHourRecords = async (
   currentDate: string,
   employeeId: string
 ) => {
@@ -134,7 +139,7 @@ const fetchProjectWorkHours = async (
   return response?.data;
 };
 
-const pushReactiveProjectWorkRecords = (projectWorkHours: any[]) => {
+const pushReactiveProjectWorkHourRecords = (projectWorkHours: any[]) => {
   reactiveData.projectWorkRecords.push(...projectWorkHours);
 };
 </script>
@@ -200,7 +205,9 @@ const pushReactiveProjectWorkRecords = (projectWorkHours: any[]) => {
         />
       </div>
       <div>
-        <WorkReport />
+        <WorkReport
+          :project-work-hour-records="reactiveData.projectWorkRecords"
+        />
       </div>
     </div>
   </div>
