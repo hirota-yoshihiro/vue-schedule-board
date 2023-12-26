@@ -31,8 +31,7 @@ const reactiveData: ReactiveData = reactive({
 </script>
 
 <template>
-  <!-- 従業員情報 -->
-  <div class="flex justify-end w-full">
+  <div class="w-full">
     <div class="w-80 border-4 border-blue-200">
       <div class="flex">
         <p class="w-36 text-center border-r-2 border-b-2 border-blue-200">
@@ -68,5 +67,4 @@ const reactiveData: ReactiveData = reactive({
       </div>
     </div>
   </div>
-  <!-- 従業員情報ここまで -->
 </template>

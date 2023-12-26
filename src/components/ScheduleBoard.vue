@@ -147,7 +147,9 @@ const pushReactiveProjectWorkHourRecords = (projectWorkHours: any[]) => {
 
 <template>
   <div class="flex flex-col">
-    <EmployeeInfomation />
+    <div class="flex justify-end">
+      <EmployeeInfomation />
+    </div>
 
     <h1 class="mb-8 font-bold text-2xl underline text-center">
       出勤簿 兼 作業報告書
@@ -162,7 +164,8 @@ const pushReactiveProjectWorkHourRecords = (projectWorkHours: any[]) => {
         {{ reactiveData.employee.lastName }}</span
       >
     </div>
-    <div class="flex flex-col items-center">
+
+    <div class="flex flex-col">
       <div class="mb-8">
         <AttendanceRecord
           :attendance-records="reactiveData.attendanceRecords"
